@@ -1,5 +1,6 @@
 mod tracker;
 mod platform;
+mod config;
 
 fn main() {
     println!("Starting activity tracker...");
