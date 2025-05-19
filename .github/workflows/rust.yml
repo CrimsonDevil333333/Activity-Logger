@@ -66,7 +66,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libappindicator3-dev xdotool
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libappindicator3-dev xdotool libdbus-1-dev
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
