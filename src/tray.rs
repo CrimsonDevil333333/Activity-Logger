@@ -18,10 +18,10 @@ fn get_icon_source(active: bool) -> IconSource {
 
 #[cfg(not(target_os = "windows"))]
 fn get_icon_source(active: bool) -> IconSource {
-    let icon_data = if active {
-        include_bytes!("../assets/active_icon.png")
+    let icon_data: &[u8] = if active {
+        include_bytes!("../assets/active_icon.png").as_ref()
     } else {
-        include_bytes!("../assets/icon.png")
+        include_bytes!("../assets/icon.png").as_ref()
     };
 
     IconSource::Data {
