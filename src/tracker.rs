@@ -13,7 +13,6 @@ pub fn track_activity<F>(get_active_window: F)
 where
     F: Fn() -> Option<String> + Send + 'static,
 {
-    // Load config and handle potential error
     let config = match Config::from_file("config.json") {
         Ok(cfg) => cfg,
         Err(e) => {
@@ -28,12 +27,10 @@ where
     let mut current_line = String::new();
     let mut last_input_time = Instant::now();
 
-    // Get file paths from config
     let key_logger_file_path = config.full_key_log_path();
     let active_window_file_path = config.active_window_log_path();
     let timeout_secs = config.timeout_secs();
 
-    // Open or create log files with better error handling
     let mut key_logger_file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -45,7 +42,10 @@ where
             )
         });
 
-    println!("Key Logger Logs are written to: {:?}", &key_logger_file_path);
+    println!(
+        "Key Logger Logs are written to: {:?}",
+        &key_logger_file_path
+    );
 
     let mut active_window_file = OpenOptions::new()
         .create(true)
@@ -58,92 +58,43 @@ where
             )
         });
 
-    println!("Active window Logs are written to: {:?}", &active_window_file_path);
+    println!(
+        "Active window Logs are written to: {:?}",
+        &active_window_file_path
+    );
 
     loop {
         let keys = device_state.get_keys();
         let key_set: HashSet<_> = keys.iter().cloned().collect();
 
-        if keys != last_keys {
-            last_keys = keys.clone();
-            last_input_time = Instant::now();
+        let shift_pressed =
+            key_set.contains(&Keycode::LShift) || key_set.contains(&Keycode::RShift);
 
-            let shift_pressed = key_set.contains(&Keycode::LShift) || key_set.contains(&Keycode::RShift);
-
-            for key in &keys {
-                let char_opt = match key {
-                    Keycode::A => Some(if shift_pressed { 'A' } else { 'a' }),
-                    Keycode::B => Some(if shift_pressed { 'B' } else { 'b' }),
-                    Keycode::C => Some(if shift_pressed { 'C' } else { 'c' }),
-                    Keycode::D => Some(if shift_pressed { 'D' } else { 'd' }),
-                    Keycode::E => Some(if shift_pressed { 'E' } else { 'e' }),
-                    Keycode::F => Some(if shift_pressed { 'F' } else { 'f' }),
-                    Keycode::G => Some(if shift_pressed { 'G' } else { 'g' }),
-                    Keycode::H => Some(if shift_pressed { 'H' } else { 'h' }),
-                    Keycode::I => Some(if shift_pressed { 'I' } else { 'i' }),
-                    Keycode::J => Some(if shift_pressed { 'J' } else { 'j' }),
-                    Keycode::K => Some(if shift_pressed { 'K' } else { 'k' }),
-                    Keycode::L => Some(if shift_pressed { 'L' } else { 'l' }),
-                    Keycode::M => Some(if shift_pressed { 'M' } else { 'm' }),
-                    Keycode::N => Some(if shift_pressed { 'N' } else { 'n' }),
-                    Keycode::O => Some(if shift_pressed { 'O' } else { 'o' }),
-                    Keycode::P => Some(if shift_pressed { 'P' } else { 'p' }),
-                    Keycode::Q => Some(if shift_pressed { 'Q' } else { 'q' }),
-                    Keycode::R => Some(if shift_pressed { 'R' } else { 'r' }),
-                    Keycode::S => Some(if shift_pressed { 'S' } else { 's' }),
-                    Keycode::T => Some(if shift_pressed { 'T' } else { 't' }),
-                    Keycode::U => Some(if shift_pressed { 'U' } else { 'u' }),
-                    Keycode::V => Some(if shift_pressed { 'V' } else { 'v' }),
-                    Keycode::W => Some(if shift_pressed { 'W' } else { 'w' }),
-                    Keycode::X => Some(if shift_pressed { 'X' } else { 'x' }),
-                    Keycode::Y => Some(if shift_pressed { 'Y' } else { 'y' }),
-                    Keycode::Z => Some(if shift_pressed { 'Z' } else { 'z' }),
-                    Keycode::Key0 => Some(if shift_pressed { ')' } else { '0' }),
-                    Keycode::Key1 => Some(if shift_pressed { '!' } else { '1' }),
-                    Keycode::Key2 => Some(if shift_pressed { '@' } else { '2' }),
-                    Keycode::Key3 => Some(if shift_pressed { '#' } else { '3' }),
-                    Keycode::Key4 => Some(if shift_pressed { '$' } else { '4' }),
-                    Keycode::Key5 => Some(if shift_pressed { '%' } else { '5' }),
-                    Keycode::Key6 => Some(if shift_pressed { '^' } else { '6' }),
-                    Keycode::Key7 => Some(if shift_pressed { '&' } else { '7' }),
-                    Keycode::Key8 => Some(if shift_pressed { '*' } else { '8' }),
-                    Keycode::Key9 => Some(if shift_pressed { '(' } else { '9' }),
-                    Keycode::Space => Some(' '),
-                    Keycode::Comma => Some(if shift_pressed { '<' } else { ',' }),
-                    Keycode::Dot => Some(if shift_pressed { '>' } else { '.' }),
-                    Keycode::Apostrophe => Some(if shift_pressed { '"' } else { '\'' }),
-                    Keycode::Semicolon => Some(if shift_pressed { ':' } else { ';' }),
-                    Keycode::Minus => Some(if shift_pressed { '_' } else { '-' }),
-                    Keycode::Equal => Some(if shift_pressed { '+' } else { '=' }),
-                    Keycode::Slash => Some(if shift_pressed { '?' } else { '/' }),
-                    Keycode::BackSlash => Some(if shift_pressed { '|' } else { '\\' }),
-                    Keycode::Grave => Some(if shift_pressed { '~' } else { '`' }),
-                    Keycode::LeftBracket => Some(if shift_pressed { '{' } else { '[' }),
-                    Keycode::RightBracket => Some(if shift_pressed { '}' } else { ']' }),
-                    Keycode::Enter => {
-                        if !current_line.is_empty() {
-                            writeln!(
-                                key_logger_file,
-                                "[{}] Input: {}",
-                                Local::now().format("%Y-%m-%d %H:%M:%S"),
-                                current_line
-                            )
-                            .unwrap();
-                            current_line.clear();
-                        }
-                        None
-                    }
-                    _ => None,
-                };
-
-                if let Some(c) = char_opt {
+        // Detect newly pressed keys only (not being held)
+        for key in &keys {
+            if !last_keys.contains(key) {
+                last_input_time = Instant::now();
+                if let Some(c) = keycode_to_char(key, shift_pressed) {
                     current_line.push(c);
+                } else if *key == Keycode::Enter {
+                    if !current_line.is_empty() {
+                        writeln!(
+                            key_logger_file,
+                            "[{}] Input: {}",
+                            Local::now().format("%Y-%m-%d %H:%M:%S"),
+                            current_line
+                        )
+                        .unwrap();
+                        current_line.clear();
+                    }
                 }
             }
         }
 
-        // Use the timeout value we stored earlier
-        if last_input_time.elapsed() > Duration::from_secs(timeout_secs) && !current_line.is_empty() {
+        last_keys = keys.clone(); // Update after processing
+
+        if last_input_time.elapsed() > Duration::from_secs(timeout_secs) && !current_line.is_empty()
+        {
             writeln!(
                 key_logger_file,
                 "[{}] Input: {}",
@@ -154,7 +105,6 @@ where
             current_line.clear();
         }
 
-        // Active window logging
         if let Some(title) = get_active_window() {
             if title != last_window {
                 last_window = title.clone();
@@ -168,6 +118,62 @@ where
             }
         }
 
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(10)); // fast input response
+    }
+}
+
+fn keycode_to_char(key: &Keycode, shift: bool) -> Option<char> {
+    use Keycode::*;
+
+    match key {
+        A => Some(if shift { 'A' } else { 'a' }),
+        B => Some(if shift { 'B' } else { 'b' }),
+        C => Some(if shift { 'C' } else { 'c' }),
+        D => Some(if shift { 'D' } else { 'd' }),
+        E => Some(if shift { 'E' } else { 'e' }),
+        F => Some(if shift { 'F' } else { 'f' }),
+        G => Some(if shift { 'G' } else { 'g' }),
+        H => Some(if shift { 'H' } else { 'h' }),
+        I => Some(if shift { 'I' } else { 'i' }),
+        J => Some(if shift { 'J' } else { 'j' }),
+        K => Some(if shift { 'K' } else { 'k' }),
+        L => Some(if shift { 'L' } else { 'l' }),
+        M => Some(if shift { 'M' } else { 'm' }),
+        N => Some(if shift { 'N' } else { 'n' }),
+        O => Some(if shift { 'O' } else { 'o' }),
+        P => Some(if shift { 'P' } else { 'p' }),
+        Q => Some(if shift { 'Q' } else { 'q' }),
+        R => Some(if shift { 'R' } else { 'r' }),
+        S => Some(if shift { 'S' } else { 's' }),
+        T => Some(if shift { 'T' } else { 't' }),
+        U => Some(if shift { 'U' } else { 'u' }),
+        V => Some(if shift { 'V' } else { 'v' }),
+        W => Some(if shift { 'W' } else { 'w' }),
+        X => Some(if shift { 'X' } else { 'x' }),
+        Y => Some(if shift { 'Y' } else { 'y' }),
+        Z => Some(if shift { 'Z' } else { 'z' }),
+        Key0 => Some(if shift { ')' } else { '0' }),
+        Key1 => Some(if shift { '!' } else { '1' }),
+        Key2 => Some(if shift { '@' } else { '2' }),
+        Key3 => Some(if shift { '#' } else { '3' }),
+        Key4 => Some(if shift { '$' } else { '4' }),
+        Key5 => Some(if shift { '%' } else { '5' }),
+        Key6 => Some(if shift { '^' } else { '6' }),
+        Key7 => Some(if shift { '&' } else { '7' }),
+        Key8 => Some(if shift { '*' } else { '8' }),
+        Key9 => Some(if shift { '(' } else { '9' }),
+        Space => Some(' '),
+        Comma => Some(if shift { '<' } else { ',' }),
+        Dot => Some(if shift { '>' } else { '.' }),
+        Apostrophe => Some(if shift { '"' } else { '\'' }),
+        Semicolon => Some(if shift { ':' } else { ';' }),
+        Minus => Some(if shift { '_' } else { '-' }),
+        Equal => Some(if shift { '+' } else { '=' }),
+        Slash => Some(if shift { '?' } else { '/' }),
+        BackSlash => Some(if shift { '|' } else { '\\' }),
+        Grave => Some(if shift { '~' } else { '`' }),
+        LeftBracket => Some(if shift { '{' } else { '[' }),
+        RightBracket => Some(if shift { '}' } else { ']' }),
+        _ => None,
     }
 }

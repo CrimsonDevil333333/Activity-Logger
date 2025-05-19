@@ -1,6 +1,6 @@
-mod tracker;
-mod platform;
 mod config;
+mod platform;
+mod tracker;
 mod tray;
 
 use std::path::PathBuf;

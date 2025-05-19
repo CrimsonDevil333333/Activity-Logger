@@ -1,6 +1,6 @@
+use crate::tracker;
 #[cfg(target_os = "linux")]
 use std::process::Command;
-use crate::tracker;
 
 #[cfg(target_os = "linux")]
 pub fn start_service() {
@@ -12,10 +12,23 @@ pub fn start_service() {
 }
 
 fn get_active_window() -> Option<String> {
-    let output = Command::new("xdotool")
+    let window_title = Command::new("xdotool")
         .arg("getwindowfocus")
         .arg("getwindowname")
         .output()
-        .ok()?;
-    String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())?
+        .trim()
+        .to_string();
+
+    let window_class = Command::new("xdotool")
+        .arg("getwindowfocus")
+        .arg("getwindowclassname")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())?
+        .trim()
+        .to_string();
+
+    Some(format!("App: {} | Title: {}", window_class, window_title))
 }

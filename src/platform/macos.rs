@@ -1,7 +1,7 @@
+use crate::tracker;
 #[cfg(target_os = "macos")]
 use cocoa::appkit::NSWorkspace;
-use cocoa::base::{nil, id};
-use crate::tracker;
+use cocoa::base::{id, nil};
 
 #[cfg(target_os = "macos")]
 pub fn start_service() {

@@ -1,5 +1,5 @@
-use std::{path::PathBuf, sync::mpsc, process};
-use tray_item::{TrayItem, IconSource};
+use std::{path::PathBuf, process, sync::mpsc};
+use tray_item::{IconSource, TrayItem};
 
 pub enum TrayMessage {
     Quit,
@@ -99,11 +99,9 @@ pub fn create_tray_icon(
         if let Err(e) = tray.add_menu_item("Clear Logs", {
             let key_log_path = key_log_path.clone();
             let active_log_path = active_log_path.clone();
-            move || {
-                match clear_logs(&key_log_path, &active_log_path) {
-                    Ok(_) => println!("Logs cleared successfully"),
-                    Err(e) => eprintln!("Failed to clear logs: {}", e),
-                }
+            move || match clear_logs(&key_log_path, &active_log_path) {
+                Ok(_) => println!("Logs cleared successfully"),
+                Err(e) => eprintln!("Failed to clear logs: {}", e),
             }
         }) {
             eprintln!("Failed to add Clear Logs menu: {}", e);

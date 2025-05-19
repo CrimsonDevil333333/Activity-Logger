@@ -36,7 +36,7 @@ impl Config {
     }
 
     /// Returns the log directory path.
-     pub fn log_directory_path(&self) -> std::path::PathBuf {
+    pub fn log_directory_path(&self) -> std::path::PathBuf {
         if self.log_dir.to_lowercase() == "temp" {
             std::env::temp_dir().join("activity_logger")
         } else {
