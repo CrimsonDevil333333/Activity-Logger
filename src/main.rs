@@ -1,4 +1,5 @@
 mod config;
+mod embedded; // new module
 mod platform;
 mod tracker;
 mod tray;
@@ -8,8 +9,19 @@ use std::path::PathBuf;
 fn main() {
     println!("Starting Activity Logger...");
 
-    // Load configuration with proper error handling
-    let config = match config::Config::from_file("config.json") {
+    // Define where config should be extracted (e.g. current dir or temp)
+    let config_path = PathBuf::from("config.json");
+
+    // Extract embedded config.json if it does NOT exist
+    if !config_path.exists() {
+        if let Err(e) = embedded::extract_asset_to_file("config.json", &config_path) {
+            eprintln!("Failed to extract embedded config.json: {}", e);
+            return;
+        }
+    }
+
+    // Now load config as before
+    let config = match config::Config::from_file(config_path.to_str().unwrap()) {
         Ok(cfg) => cfg,
         Err(e) => {
             eprintln!("Failed to load config: {}", e);
@@ -29,9 +41,6 @@ fn main() {
     // Compose full paths to log files inside the log_dir
     let key_log_path = log_dir.join(&config.key_log_file);
     let active_log_path = log_dir.join(&config.window_log_file);
-
-    // Path to config file
-    let config_path = PathBuf::from("config.json");
 
     // Initialize tray icon with all required paths
     match tray::create_tray_icon(log_dir.clone(), config_path, key_log_path, active_log_path) {

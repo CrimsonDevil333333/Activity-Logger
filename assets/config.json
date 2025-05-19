@@ -1,0 +1,6 @@
+{
+  "key_log_file": "key_log.txt",
+  "window_log_file": "active_window_log.txt",
+  "log_dir": "temp",
+  "inactivity_timeout_secs": 5
+}

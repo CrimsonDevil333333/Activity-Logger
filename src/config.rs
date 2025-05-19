@@ -37,11 +37,7 @@ impl Config {
 
     /// Returns the log directory path.
     pub fn log_directory_path(&self) -> std::path::PathBuf {
-        if self.log_dir.to_lowercase() == "temp" {
-            std::env::temp_dir().join("activity_logger")
-        } else {
-            std::path::PathBuf::from(&self.log_dir)
-        }
+        self.resolved_log_dir()
     }
 
     pub fn timeout_secs(&self) -> u64 {
