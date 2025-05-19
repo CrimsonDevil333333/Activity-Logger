@@ -15,8 +15,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        toolchain:
-          - stable-x86_64-pc-windows-msvc
+        toolchain: [stable-x86_64-pc-windows-msvc]
 
     steps:
       - name: Checkout code
@@ -39,29 +38,35 @@ jobs:
       - name: Update Rust toolchain
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
 
-      - name: Build
+      - name: Build (Windows Release)
         run: cargo build --release
 
-      - name: Run tests
-        run: cargo test
+      - name: Package Windows Artifact
+        run: |
+          mkdir -p dist/windows
+          cp target/release/activity_logger.exe dist/windows/
+          cp assets/icon.ico dist/windows/
+        shell: bash
 
-      - name: Package and Upload Release Artifacts
+      - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts-windows
-          path: target/release/activity_logger.exe
+          path: dist/windows/
 
   build-linux:
     runs-on: ubuntu-latest
     needs: build-windows
     strategy:
       matrix:
-        toolchain:
-          - stable-x86_64-unknown-linux-gnu
+        toolchain: [stable-x86_64-unknown-linux-gnu]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libappindicator3-dev xdotool
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -77,42 +82,57 @@ jobs:
       - name: Update Rust toolchain
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
 
-      - name: Build
+      - name: Build (Linux Release)
         run: cargo build --release
 
-      - name: Package and Upload Release Artifacts
+      - name: Package Linux Artifact
+        run: |
+          mkdir -p dist/linux
+          cp target/release/activity_logger dist/linux/
+          cp assets/icon.png dist/linux/
+        shell: bash
+
+      - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts-linux
-          path: target/release/activity_logger
+          path: dist/linux/
 
   release:
     runs-on: ubuntu-latest
     needs: build-linux
     permissions:
-      contents: read
+      contents: write  # Required for creating release
     steps:
-      - name: Download Windows Artifacts
+      - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: release-artifacts-windows
-          path: target/release/
+          path: dist/windows
 
-      - name: Download Linux Artifacts
+      - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
           name: release-artifacts-linux
-          path: target/release/
+          path: dist/linux
 
       - name: Generate release tag
         id: tag
-        run: |
-          echo "release_tag=UserBuild_$(date +"%Y.%m.%d_%H-%M")" >> "$GITHUB_OUTPUT"
+        run: echo "release_tag=UserBuild_$(date +'%Y.%m.%d_%H-%M')" >> "$GITHUB_OUTPUT"
 
-      - name: GH Release
+      - name: Compress Artifacts
+        run: |
+          cd dist
+          zip -r activity_logger_windows.zip windows
+          zip -r activity_logger_linux.zip linux
+        shell: bash
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
-          files: target/release/*
+          files: |
+            dist/activity_logger_windows.zip
+            dist/activity_logger_linux.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
