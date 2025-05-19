@@ -23,6 +23,7 @@ dependencies = [
  "tray-item",
  "winapi",
  "windows-service",
+ "winreg",
  "x11",
 ]
 

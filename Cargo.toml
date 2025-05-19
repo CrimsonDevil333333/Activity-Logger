@@ -5,6 +5,14 @@ edition = "2021"
 authors = ["Satyaa Goyal <satyaagoyal333333@gmail.com>"]
 description = "Activity tracking application with system tray integration"
 repository = "https://github.com/CrimsonDevil333333/Activity-Logger"
+license = "MIT"
+readme = "README.md"
+
+[[bin]]
+name = "activity_logger"
+path = "src/main.rs"
+# This makes sure console window is hidden on Windows
+# Only applies on `cargo build --release` and must be used with proper subsystem
 
 [dependencies]
 # Core functionality
@@ -17,14 +25,15 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rust-embed = "6.4.0"
 
-# System tray functionality - updated to use stable version without features
+# Tray and utility
 tray-item = "0.10.0"
 open = "3.0.0"
 
-# Platform-specific dependencies
+# Platform-specific
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "shellapi"] }
 windows-service = "0.5"
+winreg = "0.10"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 x11 = "2.20.0"
