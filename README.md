@@ -2,43 +2,61 @@
 
 ## Overview
 
-**Activity-Logger** is a cross-platform application designed to track user activity, including key inputs and active window changes. It logs this data into specified files for analysis, making it a useful tool for productivity tracking, debugging, or other monitoring purposes.
+**Activity-Logger** is a cross-platform desktop utility that tracks user activity — such as key inputs and active window changes — and logs this data for productivity insights or diagnostics.
 
-The project supports Windows, Linux, and macOS platforms and leverages Rust's concurrency and performance capabilities to efficiently monitor and log user activity in near real-time.
+It works silently in the background with a modern **system tray icon** interface, providing quick access to logs and the option to gracefully exit the app.
+
+The project is built in Rust for performance and efficiency and supports **Windows**, **Linux**, and **macOS** platforms with platform-specific integrations.
 
 ---
 
 ## Features
 
 1. **Keylogging**
-   Captures and logs user key inputs along with timestamps.
+   Captures and logs user key inputs with timestamps.
 
 2. **Active Window Tracking**
-   Tracks the currently focused application window and logs its title with timestamps.
+   Records the currently focused window and logs its title and associated app.
 
-3. **Configurable Logging**
-   - Adjustable file paths for logs (`key_log_file`, `window_log_file`).
-   - Configurable inactivity timeout for flushing buffered key inputs.
+3. **System Tray Icon** (<img src="assets/active_icon.ico" alt="Icon" width="15"/>)
+   - Lightweight tray icon runs in background
+   - Right-click menu with:
+     - **Show Logs**
+     - **Open Config**
+     - **Clear Logs**
+     - **Quit**
+   - Seamless background operation — no taskbar clutter.
 
-4. **Cross-Platform Support**
-   Platform-specific implementations for Windows, Linux, and macOS.
+4. **Configurable Logging**
+   - `config.json` allows you to customize file names, storage directory, and inactivity timeout.
 
-5. **Concurrency**
-   Utilizes Rust's multithreading capabilities to efficiently handle logging tasks.
+5. **Hidden Console on Release Build (Windows)**
+   - In **debug mode**, a terminal window is shown for development output.
+   - In **release mode**, the app runs in the background silently with **no console window**.
+
+6. **Cross-Platform Support**
+   Windows, Linux, and macOS support, with native APIs for each.
 
 ---
 
 ## Installation
 
-1. **Prerequisites**
-   - Rust toolchain installed. Follow the [official instructions](https://www.rust-lang.org/tools/install).
-   - System dependencies:
-     - **Linux**: `xdotool`, `libx11-dev` and `libappindicator3-dev` (can be installed via `sudo apt-get install xdotool libx11-dev libappindicator3-dev`).
-     - **Windows/MacOS**: No additional dependencies required.
+### 1. Prerequisites
 
+- **Rust Toolchain**:
+  Install from [https://rust-lang.org/tools/install](https://rust-lang.org/tools/install)
+
+- **System Dependencies**:
+  - **Linux**:
+    ```bash
+    sudo apt install xdotool libx11-dev libappindicator3-dev
+    ```
+  - **Windows/macOS**: No additional dependencies needed.
+
+---
 2. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/Activity-Logger.git
+   git clone https://github.com/CrimsonDevil333333/Activity-Logger
    cd Activity-Logger
    ```
 
@@ -83,16 +101,18 @@ Place the `config.json` file in the same directory as the executable.
 Each line contains a timestamp and the recorded key inputs:
 
 ```
-[2025-05-09 10:15:30] Input: hello world
-[2025-05-09 10:15:35] Input: rust is awesome
+[2025-05-19 13:22:00] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: Hello World
+[2025-05-19 13:22:14] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: This is test
+[2025-05-19 13:22:17] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: Rust is cool
+
 ```
 
 ### Active Window Logs
 Each line contains a timestamp and the title of the active window:
 
 ```
-[2025-05-09 10:15:30] Active Window: Visual Studio Code
-[2025-05-09 10:15:35] Active Window: Firefox
+[2025-05-19 12:30:24] Active Window: App: Fleet.exe | Title: Terminal — Activity-Logger
+[2025-05-19 13:18:48] Active Window: App: Explorer.EXE | Title: release - File Explorer
 ```
 
 ---

@@ -2,26 +2,117 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
 
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable-x86_64-pc-windows-msvc
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y libx11-dev
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2.22.0
 
-    - name: Build
-      run: cargo build --verbose
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.toolchain }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.toolchain }}-
+            ${{ runner.os }}-cargo-
 
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Update Rust toolchain
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Package and Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-windows
+          path: target/release/activity_logger.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: build-windows
+    strategy:
+      matrix:
+        toolchain:
+          - stable-x86_64-unknown-linux-gnu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.toolchain }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.toolchain }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Update Rust toolchain
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package and Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-linux
+          path: target/release/activity_logger
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-linux
+    permissions:
+      contents: read
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-windows
+          path: target/release/
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts-linux
+          path: target/release/
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "release_tag=UserBuild_$(date +"%Y.%m.%d_%H-%M")" >> "$GITHUB_OUTPUT"
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: target/release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
