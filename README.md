@@ -33,7 +33,7 @@ The project supports Windows, Linux, and macOS platforms and leverages Rust's co
 1. **Prerequisites**
    - Rust toolchain installed. Follow the [official instructions](https://www.rust-lang.org/tools/install).
    - System dependencies:
-     - **Linux**: `xdotool` and `libx11-dev` (can be installed via `sudo apt-get install xdotool libx11-dev`).
+     - **Linux**: `xdotool`, `libx11-dev` and `libappindicator3-dev` (can be installed via `sudo apt-get install xdotool libx11-dev libappindicator3-dev`).
      - **Windows/MacOS**: No additional dependencies required.
 
 2. **Clone the Repository**
@@ -62,7 +62,7 @@ The application uses a `config.json` file to specify logging preferences. Below 
 {
   "key_log_file": "keys.log",
   "window_log_file": "windows.log",
-  "log_dir": "c://logs" or  "./logs/" depending on OS,
+  "log_dir": "c://logs",
   "inactivity_timeout_secs": 5
 }
 ```

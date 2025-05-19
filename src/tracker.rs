@@ -1,14 +1,26 @@
 use crate::config::Config;
-
 use chrono::Local;
 use device_query::{DeviceQuery, DeviceState, Keycode};
-use std::{collections::HashSet, fs::OpenOptions, io::Write, thread, time::{Duration, Instant}};
+use std::{
+    collections::HashSet,
+    fs::OpenOptions,
+    io::Write,
+    thread,
+    time::{Duration, Instant},
+};
 
 pub fn track_activity<F>(get_active_window: F)
 where
     F: Fn() -> Option<String> + Send + 'static,
 {
-    let config = Config::from_file("config.json");
+    // Load config and handle potential error
+    let config = match Config::from_file("config.json") {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("Failed to load config: {}", e);
+            return;
+        }
+    };
 
     let device_state = DeviceState::new();
     let mut last_keys = vec![];
@@ -16,23 +28,37 @@ where
     let mut current_line = String::new();
     let mut last_input_time = Instant::now();
 
+    // Get file paths from config
     let key_logger_file_path = config.full_key_log_path();
+    let active_window_file_path = config.active_window_log_path();
+    let timeout_secs = config.timeout_secs();
+
+    // Open or create log files with better error handling
     let mut key_logger_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&key_logger_file_path)
-        .expect("Could not open log file");
+        .unwrap_or_else(|e| {
+            panic!(
+                "Could not open key log file at {:?}: {}",
+                key_logger_file_path, e
+            )
+        });
 
-    println!("Key Logger Log's are written to: {:?}", &key_logger_file_path);
+    println!("Key Logger Logs are written to: {:?}", &key_logger_file_path);
 
-    let active_window_file_path = config.active_window_log_path();
     let mut active_window_file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&active_window_file_path)
-        .expect("Could not open log file");
+        .unwrap_or_else(|e| {
+            panic!(
+                "Could not open active window log file at {:?}: {}",
+                active_window_file_path, e
+            )
+        });
 
-    println!("Active window Log's are written to: {:?}", &active_window_file_path);
+    println!("Active window Logs are written to: {:?}", &active_window_file_path);
 
     loop {
         let keys = device_state.get_keys();
@@ -116,9 +142,8 @@ where
             }
         }
 
-        let config = Config::from_file("config.json");
-        // If 5 seconds have passed since last input and buffer is non-empty
-        if last_input_time.elapsed() > Duration::from_secs(config.timeout_secs()) && !current_line.is_empty() {
+        // Use the timeout value we stored earlier
+        if last_input_time.elapsed() > Duration::from_secs(timeout_secs) && !current_line.is_empty() {
             writeln!(
                 key_logger_file,
                 "[{}] Input: {}",

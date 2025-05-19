@@ -2,23 +2,40 @@
 name = "activity_logger"
 version = "0.1.0"
 edition = "2021"
+authors = ["Satyaa Goyal <satyaagoyal333333@gmail.com>"]
+description = "Activity tracking application with system tray integration"
+repository = "https://github.com/CrimsonDevil333333/Activity-Logger"
 
 [dependencies]
+# Core functionality
 device_query = "1.1"
 sysinfo = "0.29"
 tempfile = "3.8"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
+# System tray functionality - updated to use stable version without features
+tray-item = "0.10.0"
+open = "3.0.0"
+
+# Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3" }
+winapi = { version = "0.3", features = ["winuser", "shellapi"] }
 windows-service = "0.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 x11 = "2.20.0"
+libappindicator = "0.7"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.24"
 core-foundation = "0.9"
+objc = "0.2.7"
+
+[build-dependencies]
+embed-resource = "1.8"
+
+[features]
+default = []
