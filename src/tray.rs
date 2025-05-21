@@ -1,4 +1,5 @@
-use std::{path::PathBuf, process, sync::mpsc};
+use std::{fs, path::PathBuf, process, sync::mpsc};
+
 use tray_item::{IconSource, TrayItem};
 
 pub enum TrayMessage {
@@ -19,11 +20,9 @@ fn get_icon_source(active: bool) -> IconSource {
 #[cfg(not(target_os = "windows"))]
 fn get_icon_source(active: bool) -> IconSource {
     let icon_data: Vec<u8> = if active {
-        include_bytes!("../assets/active_icon.png")
-            .as_ref()
-            .to_vec()
+        include_bytes!("../assets/active_icon.png").to_vec()
     } else {
-        include_bytes!("../assets/icon.png").as_ref().to_vec()
+        include_bytes!("../assets/icon.png").to_vec()
     };
 
     IconSource::Data {
@@ -33,7 +32,6 @@ fn get_icon_source(active: bool) -> IconSource {
     }
 }
 
-// Function to truncate/clear log files safely
 fn clear_logs(key_log_path: &PathBuf, active_log_path: &PathBuf) -> Result<(), std::io::Error> {
     std::fs::OpenOptions::new()
         .write(true)
@@ -48,6 +46,18 @@ fn clear_logs(key_log_path: &PathBuf, active_log_path: &PathBuf) -> Result<(), s
     Ok(())
 }
 
+fn clear_screenshots(screenshot_dir: &PathBuf) -> Result<(), std::io::Error> {
+    if screenshot_dir.exists() && screenshot_dir.is_dir() {
+        for entry in fs::read_dir(screenshot_dir)? {
+            let entry = entry?;
+            if entry.path().is_file() {
+                fs::remove_file(entry.path())?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn create_tray_icon(
     log_dir: PathBuf,
     config_path: PathBuf,
@@ -56,6 +66,8 @@ pub fn create_tray_icon(
 ) -> Result<(), String> {
     let (sender, receiver) = mpsc::channel();
     let thread_sender = sender.clone();
+
+    let screenshot_dir = log_dir.join("screenshots");
 
     std::thread::spawn(move || {
         let mut tray = match TrayItem::new("Activity Logger", get_icon_source(false)) {
@@ -67,11 +79,10 @@ pub fn create_tray_icon(
             }
         };
 
-        if let Err(e) = tray.inner_mut().add_label("Activity Logger") {
-            eprintln!("Failed to add label: {}", e);
-        }
+        tray.inner_mut().add_label("Activity Logger").ok();
 
-        if let Err(e) = tray.add_menu_item("Show Logs", {
+        // Show Logs
+        tray.add_menu_item("Show Logs", {
             let log_dir = log_dir.clone();
             let sender = sender.clone();
             move || {
@@ -80,11 +91,11 @@ pub fn create_tray_icon(
                 }
                 let _ = sender.send(TrayMessage::ShowLogs);
             }
-        }) {
-            eprintln!("Failed to add Show Logs menu: {}", e);
-        }
+        })
+        .ok();
 
-        if let Err(e) = tray.add_menu_item("Open Config", {
+        // Open Config
+        tray.add_menu_item("Open Config", {
             let config_path = config_path.clone();
             let sender = sender.clone();
             move || {
@@ -93,40 +104,71 @@ pub fn create_tray_icon(
                 }
                 let _ = sender.send(TrayMessage::OpenConfig);
             }
-        }) {
-            eprintln!("Failed to add Open Config menu: {}", e);
-        }
+        })
+        .ok();
 
-        // Clear Logs menu item
-        if let Err(e) = tray.add_menu_item("Clear Logs", {
+        // Open Screenshots Folder
+        tray.add_menu_item("Open Screenshots Folder", {
+            let screenshot_dir = screenshot_dir.clone();
+            move || {
+                if let Err(e) = open::that(&screenshot_dir) {
+                    eprintln!("Failed to open screenshots folder: {}", e);
+                }
+            }
+        })
+        .ok();
+
+        // Clear Logs
+        tray.add_menu_item("Clear Logs", {
             let key_log_path = key_log_path.clone();
             let active_log_path = active_log_path.clone();
             move || match clear_logs(&key_log_path, &active_log_path) {
-                Ok(_) => println!("Logs cleared successfully"),
-                Err(e) => eprintln!("Failed to clear logs: {}", e),
+                Ok(_) => println!("✅ Logs cleared."),
+                Err(e) => eprintln!("❌ Failed to clear logs: {}", e),
             }
-        }) {
-            eprintln!("Failed to add Clear Logs menu: {}", e);
-        }
+        })
+        .ok();
 
-        if let Err(e) = tray.inner_mut().add_separator() {
-            eprintln!("Failed to add separator: {}", e);
-        }
+        // Clear Screenshots
+        tray.add_menu_item("Clear Screenshots", {
+            let screenshot_dir = screenshot_dir.clone();
+            move || match clear_screenshots(&screenshot_dir) {
+                Ok(_) => println!("✅ Screenshots cleared."),
+                Err(e) => eprintln!("❌ Failed to clear screenshots: {}", e),
+            }
+        })
+        .ok();
 
-        if let Err(e) = tray.add_menu_item("Quit", move || {
+        // Clear Everything
+        tray.add_menu_item("Clear Everything", {
+            let screenshot_dir = screenshot_dir.clone();
+            let key_log_path = key_log_path.clone();
+            let active_log_path = active_log_path.clone();
+            move || {
+                let log_result = clear_logs(&key_log_path, &active_log_path);
+                let ss_result = clear_screenshots(&screenshot_dir);
+
+                match (log_result, ss_result) {
+                    (Ok(_), Ok(_)) => println!("✅ All logs and screenshots cleared."),
+                    (Err(e), _) | (_, Err(e)) => eprintln!("❌ Failed to clear everything: {}", e),
+                }
+            }
+        })
+        .ok();
+
+        tray.inner_mut().add_separator().ok();
+
+        // Quit
+        tray.add_menu_item("Quit", move || {
             let _ = sender.send(TrayMessage::Quit);
-        }) {
-            eprintln!("Failed to add Quit menu: {}", e);
-        }
+        })
+        .ok();
 
-        if let Err(e) = tray.set_icon(get_icon_source(true)) {
-            eprintln!("Failed to set active icon: {}", e);
-        }
+        tray.set_icon(get_icon_source(true)).ok();
 
         while let Ok(msg) = receiver.recv() {
-            match msg {
-                TrayMessage::Quit => process::exit(0),
-                _ => {}
+            if let TrayMessage::Quit = msg {
+                process::exit(0);
             }
         }
     });
