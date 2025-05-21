@@ -3,9 +3,12 @@
 mod config;
 mod embedded; // new module
 mod platform;
+mod screenshot_mod;
 mod tracker;
 mod tray;
 use std::path::PathBuf;
+
+use screenshot_mod::start_screenshot_loop;
 
 fn main() {
     println!("Starting Activity Logger...");
@@ -37,6 +40,15 @@ fn main() {
     if let Err(e) = std::fs::create_dir_all(&log_dir) {
         eprintln!("Failed to create log directory: {}", e);
         return;
+    }
+
+    // Start screenshot capture if enabled
+    if config.screenshot_enabled.unwrap_or(false) {
+        let stop_flag = config.screenshot_enabled.unwrap_or(true);
+        let interval_secs = config.screenshot_interval_secs.unwrap_or(30);
+        let resolution = config.screenshot_resolution;
+
+        start_screenshot_loop(&log_dir, interval_secs, !stop_flag.clone(), resolution);
     }
 
     // Compose full paths to log files inside the log_dir

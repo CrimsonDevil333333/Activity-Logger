@@ -7,6 +7,9 @@ pub struct Config {
     pub window_log_file: String,
     pub log_dir: String,
     pub inactivity_timeout_secs: u64,
+    pub screenshot_enabled: Option<bool>,          // new
+    pub screenshot_interval_secs: Option<u64>,     // new
+    pub screenshot_resolution: Option<(u32, u32)>, // new
 }
 
 impl Config {
@@ -42,5 +45,13 @@ impl Config {
 
     pub fn timeout_secs(&self) -> u64 {
         self.inactivity_timeout_secs
+    }
+
+    pub fn ss_capture_flag(&self) -> bool {
+        self.screenshot_enabled.unwrap_or(true)
+    }
+
+    pub fn screen_capture_resolution(&self) -> Option<(u32, u32)> {
+        self.screenshot_resolution
     }
 }
