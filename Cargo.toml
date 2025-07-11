@@ -30,6 +30,9 @@ image = { version = "0.24", features = ["jpeg"] }
 
 # Tray and utility
 open = "3.0.0"
+rdev = "0.5.3"
+notify-rust = "4.11.7"
+rfd = "0.15.3"
 
 # Platform-specific
 [target.'cfg(windows)'.dependencies]
