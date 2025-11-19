@@ -1,5 +1,5 @@
-use std::{fs, path::PathBuf, process, sync::mpsc};
 use crate::config::Config;
+use std::{fs, path::PathBuf, process, sync::mpsc};
 use tray_item::{IconSource, TrayItem};
 
 pub enum TrayMessage {
@@ -64,9 +64,18 @@ fn config_summary(config: &Config) -> String {
     summary.push_str(&format!("Key Log File: {}\n", config.key_log_file));
     summary.push_str(&format!("Window Log File: {}\n", config.window_log_file));
     summary.push_str(&format!("Log Dir: {}\n", config.log_dir));
-    summary.push_str(&format!("Inactivity Timeout: {}s\n", config.inactivity_timeout_secs));
-    summary.push_str(&format!("Screenshot Enabled: {}\n", config.screenshot_enabled.unwrap_or(false)));
-    summary.push_str(&format!("Screenshot Interval: {}s\n", config.screenshot_interval_secs.unwrap_or(0)));
+    summary.push_str(&format!(
+        "Inactivity Timeout: {}s\n",
+        config.inactivity_timeout_secs
+    ));
+    summary.push_str(&format!(
+        "Screenshot Enabled: {}\n",
+        config.screenshot_enabled.unwrap_or(false)
+    ));
+    summary.push_str(&format!(
+        "Screenshot Interval: {}s\n",
+        config.screenshot_interval_secs.unwrap_or(0)
+    ));
     if let Some((w, h)) = config.screenshot_resolution {
         summary.push_str(&format!("Screenshot Resolution: {}x{}\n", w, h));
     }
@@ -81,14 +90,23 @@ fn config_summary(config: &Config) -> String {
     }
     if let Some(ref notif) = config.notification {
         summary.push_str("Notifications:\n");
-        summary.push_str(&format!("  On Start: {}\n", notif.on_start.unwrap_or(false)));
+        summary.push_str(&format!(
+            "  On Start: {}\n",
+            notif.on_start.unwrap_or(false)
+        ));
         summary.push_str(&format!("  On Stop: {}\n", notif.on_stop.unwrap_or(false)));
-        summary.push_str(&format!("  On Error: {}\n", notif.on_error.unwrap_or(false)));
+        summary.push_str(&format!(
+            "  On Error: {}\n",
+            notif.on_error.unwrap_or(false)
+        ));
     }
     if let Some(ref report) = config.summary_report {
         summary.push_str("Summary Report:\n");
         summary.push_str(&format!("  Enabled: {}\n", report.enabled.unwrap_or(false)));
-        summary.push_str(&format!("  Interval Days: {}\n", report.interval_days.unwrap_or(0)));
+        summary.push_str(&format!(
+            "  Interval Days: {}\n",
+            report.interval_days.unwrap_or(0)
+        ));
         if let Some(ref out) = report.output_file {
             summary.push_str(&format!("  Output File: {}\n", out));
         }
@@ -124,6 +142,20 @@ pub fn create_tray_icon(
         };
 
         tray.inner_mut().add_label("Activity Logger").ok();
+
+        tray.inner_mut().add_label("Activity Logger").ok();
+
+        // Open Dashboard
+        tray.add_menu_item("Open Dashboard", {
+            let port = config.server_port();
+            move || {
+                let url = format!("http://localhost:{}", port);
+                if let Err(e) = open::that(&url) {
+                    eprintln!("Failed to open dashboard: {}", e);
+                }
+            }
+        })
+        .ok();
 
         // Show Logs
         tray.add_menu_item("Show Logs", {

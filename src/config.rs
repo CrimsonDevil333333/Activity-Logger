@@ -1,7 +1,7 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{fs, io, path::PathBuf};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub key_log_file: String,
     pub window_log_file: String,
@@ -13,22 +13,23 @@ pub struct Config {
     pub hotkeys: Option<HotkeyConfig>,
     pub notification: Option<NotificationConfig>,
     pub summary_report: Option<SummaryReportConfig>,
+    pub server_port: Option<u16>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct HotkeyConfig {
     pub pause_resume: Option<String>, // e.g., "Ctrl+Shift+P"
     pub screenshot: Option<String>,   // e.g., "Ctrl+Shift+S"
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NotificationConfig {
     pub on_start: Option<bool>,
     pub on_stop: Option<bool>,
     pub on_error: Option<bool>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct SummaryReportConfig {
     pub enabled: Option<bool>,
     pub interval_days: Option<u32>, // e.g., 1 for daily, 7 for weekly
@@ -40,6 +41,12 @@ impl Config {
         let config_data = fs::read_to_string(path)?;
         serde_json::from_str(&config_data)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+    }
+
+    pub fn save(&self, path: &str) -> Result<(), io::Error> {
+        let config_data = serde_json::to_string_pretty(self)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        fs::write(path, config_data)
     }
 
     /// Returns the base log directory, creating `temp/activity_logger` if needed.
@@ -87,26 +94,45 @@ impl Config {
     }
 
     pub fn notify_on_start(&self) -> bool {
-        self.notification.as_ref().and_then(|n| n.on_start).unwrap_or(false)
+        self.notification
+            .as_ref()
+            .and_then(|n| n.on_start)
+            .unwrap_or(false)
     }
 
     pub fn notify_on_stop(&self) -> bool {
-        self.notification.as_ref().and_then(|n| n.on_stop).unwrap_or(false)
+        self.notification
+            .as_ref()
+            .and_then(|n| n.on_stop)
+            .unwrap_or(false)
     }
 
     pub fn notify_on_error(&self) -> bool {
-        self.notification.as_ref().and_then(|n| n.on_error).unwrap_or(true)
+        self.notification
+            .as_ref()
+            .and_then(|n| n.on_error)
+            .unwrap_or(true)
     }
 
     pub fn summary_report_enabled(&self) -> bool {
-        self.summary_report.as_ref().and_then(|s| s.enabled).unwrap_or(false)
+        self.summary_report
+            .as_ref()
+            .and_then(|s| s.enabled)
+            .unwrap_or(false)
     }
 
     pub fn summary_report_interval_days(&self) -> u32 {
-        self.summary_report.as_ref().and_then(|s| s.interval_days).unwrap_or(1)
+        self.summary_report
+            .as_ref()
+            .and_then(|s| s.interval_days)
+            .unwrap_or(1)
     }
 
     pub fn summary_report_output_file(&self) -> Option<&str> {
         self.summary_report.as_ref()?.output_file.as_deref()
+    }
+
+    pub fn server_port(&self) -> u16 {
+        self.server_port.unwrap_or(8080)
     }
 }

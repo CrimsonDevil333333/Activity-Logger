@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logger Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --sidebar-bg: #1e293b;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border: #334155;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        aside {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+        }
+
+        .refresh-control {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .refresh-control label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        select,
+        input[type="text"] {
+            width: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .search-box {
+            max-width: 300px;
+        }
+
+        .view {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #1e293b;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        td {
+            font-size: 0.9rem;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .gallery-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-item .info {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border);
+        }
+
+        .settings-form {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            max-width: 600px;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .form-group input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 4px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+        }
+
+        .confirm-dialog.active {
+            display: flex;
+        }
+
+        .confirm-content {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            max-width: 400px;
+        }
+
+        .confirm-content h3 {
+            margin-top: 0;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside>
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Activity Logger
+        </div>
+        <nav>
+            <button class="nav-btn active" data-target="stats-view">Dashboard</button>
+            <button class="nav-btn" data-target="keys-view">Key Logs</button>
+            <button class="nav-btn" data-target="windows-view">Window Logs</button>
+            <button class="nav-btn" data-target="gallery-view">Screenshots</button>
+            <button class="nav-btn" data-target="settings-view">Settings</button>
+        </nav>
+
+        <div class="refresh-control">
+            <label for="refresh-interval">Auto-refresh</label>
+            <select id="refresh-interval">
+                <option value="0">Off</option>
+                <option value="5000">5 Seconds</option>
+                <option value="10000">10 Seconds</option>
+                <option value="30000">30 Seconds</option>
+            </select>
+        </div>
+    </aside>
+
+    <main>
+        <div id="stats-view" class="view active">
+            <div class="header">
+                <h2>Dashboard</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Key Logs</h3>
+                    <div class="value" id="stat-key-logs">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Window Logs</h3>
+                    <div class="value" id="stat-window-logs">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Screenshots</h3>
+                    <div class="value" id="stat-screenshots">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Disk Usage</h3>
+                    <div class="value" id="stat-disk-usage">0 MB</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="keys-view" class="view">
+            <div class="header">
+                <h2>Key Logs</h2>
+                <div class="header-actions">
+                    <input type="text" id="keys-search" class="search-box" placeholder="Search...">
+                    <button class="btn btn-danger btn-sm" onclick="confirmClear('keys')">Clear Logs</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="keys-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Window</th>
+                            <th>Input</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="windows-view" class="view">
+            <div class="header">
+                <h2>Window Logs</h2>
+                <div class="header-actions">
+                    <input type="text" id="windows-search" class="search-box" placeholder="Search...">
+                    <button class="btn btn-danger btn-sm" onclick="confirmClear('windows')">Clear Logs</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="windows-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Active Window Title</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="gallery-view" class="view">
+            <div class="header">
+                <h2>Screenshots</h2>
+                <div class="header-actions">
+                    <button class="btn btn-danger btn-sm" onclick="confirmClear('screenshots')">Clear
+                        Screenshots</button>
+                </div>
+            </div>
+            <div class="gallery" id="gallery-grid">
+            </div>
+        </div>
+
+        <div id="settings-view" class="view">
+            <div class="header">
+                <h2>Settings</h2>
+            </div>
+            <div class="settings-form">
+                <form id="config-form">
+                    <div class="form-group">
+                        <label>Key Log File</label>
+                        <input type="text" name="key_log_file" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Window Log File</label>
+                        <input type="text" name="window_log_file" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Log Directory</label>
+                        <input type="text" name="log_dir" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Inactivity Timeout (Seconds)</label>
+                        <input type="number" name="inactivity_timeout_secs" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Screenshot Interval (Seconds)</label>
+                        <input type="number" name="screenshot_interval_secs">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="screenshot_enabled"> Enable Screenshots
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Server Port (Requires Restart)</label>
+                        <input type="number" name="server_port">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="image-modal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img id="modal-img" src="" alt="Full size">
+    </div>
+
+    <div id="confirm-dialog" class="confirm-dialog">
+        <div class="confirm-content">
+            <h3>Confirm Action</h3>
+            <p id="confirm-message"></p>
+            <div class="confirm-actions">
+                <button class="btn btn-danger" onclick="executeClear()">Confirm</button>
+                <button class="btn btn-primary" onclick="closeConfirm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let refreshIntervalId = null;
+        let currentConfig = {};
+        let allKeyLogs = [];
+        let allWindowLogs = [];
+        let pendingClearAction = null;
+
+        // Navigation
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const views = document.querySelectorAll('.view');
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                views.forEach(v => v.classList.remove('active'));
+
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+
+                refreshCurrentView();
+            });
+        });
+
+        // Data Fetching
+        async function fetchKeyLogs() {
+            try {
+                const res = await fetch('/api/logs/keys');
+                const data = await res.json();
+                allKeyLogs = data.reverse();
+                renderKeyLogs();
+            } catch (e) {
+                console.error("Failed to fetch key logs", e);
+            }
+        }
+
+        async function fetchWindowLogs() {
+            try {
+                const res = await fetch('/api/logs/windows');
+                const data = await res.json();
+                allWindowLogs = data.reverse();
+                renderWindowLogs();
+            } catch (e) {
+                console.error("Failed to fetch window logs", e);
+            }
+        }
+
+        async function fetchScreenshots() {
+            try {
+                const res = await fetch('/api/screenshots');
+                const data = await res.json();
+                const grid = document.getElementById('gallery-grid');
+                grid.innerHTML = data.map(entry => `
+                <div class="gallery-item" onclick="openModal('${entry.url}')">
+                    <img src="${entry.url}" loading="lazy" alt="${entry.name}">
+                    <div class="info">${entry.name}</div>
+                </div>
+            `).join('');
+            } catch (e) {
+                console.error("Failed to fetch screenshots", e);
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('stat-key-logs').textContent = data.key_logs;
+                document.getElementById('stat-window-logs').textContent = data.window_logs;
+                document.getElementById('stat-screenshots').textContent = data.screenshots;
+                document.getElementById('stat-disk-usage').textContent = data.disk_usage_mb.toFixed(2) + ' MB';
+            } catch (e) {
+                console.error("Failed to fetch stats", e);
+            }
+        }
+
+        async function fetchConfig() {
+            try {
+                const res = await fetch('/api/config');
+                currentConfig = await res.json();
+                populateForm(currentConfig);
+            } catch (e) {
+                console.error("Failed to fetch config", e);
+                showToast("Failed to load configuration", "error");
+            }
+        }
+
+        // Rendering
+        function renderKeyLogs() {
+            const searchTerm = document.getElementById('keys-search').value.toLowerCase();
+            const filtered = allKeyLogs.filter(entry =>
+                entry.timestamp.toLowerCase().includes(searchTerm) ||
+                entry.window.toLowerCase().includes(searchTerm) ||
+                entry.input.toLowerCase().includes(searchTerm)
+            );
+
+            const tbody = document.querySelector('#keys-table tbody');
+            tbody.innerHTML = filtered.map(entry => `
+            <tr>
+                <td>${entry.timestamp}</td>
+                <td>${entry.window}</td>
+                <td>${entry.input}</td>
+            </tr>
+        `).join('');
+        }
+
+        function renderWindowLogs() {
+            const searchTerm = document.getElementById('windows-search').value.toLowerCase();
+            const filtered = allWindowLogs.filter(entry =>
+                entry.timestamp.toLowerCase().includes(searchTerm) ||
+                entry.title.toLowerCase().includes(searchTerm)
+            );
+
+            const tbody = document.querySelector('#windows-table tbody');
+            tbody.innerHTML = filtered.map(entry => `
+            <tr>
+                <td>${entry.timestamp}</td>
+                <td>${entry.title}</td>
+            </tr>
+        `).join('');
+        }
+
+        // Search
+        document.getElementById('keys-search').addEventListener('input', renderKeyLogs);
+        document.getElementById('windows-search').addEventListener('input', renderWindowLogs);
+
+        // Form Handling
+        function populateForm(config) {
+            const form = document.getElementById('config-form');
+            form.key_log_file.value = config.key_log_file;
+            form.window_log_file.value = config.window_log_file;
+            form.log_dir.value = config.log_dir;
+            form.inactivity_timeout_secs.value = config.inactivity_timeout_secs;
+            form.screenshot_interval_secs.value = config.screenshot_interval_secs || 30;
+            form.screenshot_enabled.checked = config.screenshot_enabled !== false;
+            form.server_port.value = config.server_port || 8080;
+        }
+
+        document.getElementById('config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            const newConfig = {
+                ...currentConfig,
+                key_log_file: formData.get('key_log_file'),
+                window_log_file: formData.get('window_log_file'),
+                log_dir: formData.get('log_dir'),
+                inactivity_timeout_secs: parseInt(formData.get('inactivity_timeout_secs')),
+                screenshot_interval_secs: parseInt(formData.get('screenshot_interval_secs')),
+                screenshot_enabled: formData.get('screenshot_enabled') === 'on',
+                server_port: parseInt(formData.get('server_port')),
+            };
+
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newConfig)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    showToast(result.message, "success");
+                    currentConfig = newConfig;
+                } else {
+                    showToast("Failed to save: " + result, "error");
+                }
+            } catch (e) {
+                showToast("Error saving configuration", "error");
+                console.error(e);
+            }
+        });
+
+        // Clear Functions
+        function confirmClear(type) {
+            pendingClearAction = type;
+            const messages = {
+                'keys': 'Are you sure you want to clear all key logs?',
+                'windows': 'Are you sure you want to clear all window logs?',
+                'screenshots': 'Are you sure you want to delete all screenshots?'
+            };
+            document.getElementById('confirm-message').textContent = messages[type];
+            document.getElementById('confirm-dialog').classList.add('active');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirm-dialog').classList.remove('active');
+            pendingClearAction = null;
+        }
+
+        async function executeClear() {
+            if (!pendingClearAction) return;
+
+            const endpoints = {
+                'keys': '/api/logs/keys',
+                'windows': '/api/logs/windows',
+                'screenshots': '/api/screenshots'
+            };
+
+            try {
+                const res = await fetch(endpoints[pendingClearAction], { method: 'DELETE' });
+                const result = await res.json();
+
+                if (res.ok) {
+                    showToast(result.message, "success");
+                    refreshCurrentView();
+                    fetchStats();
+                } else {
+                    showToast("Failed to clear", "error");
+                }
+            } catch (e) {
+                showToast("Error clearing data", "error");
+                console.error(e);
+            }
+
+            closeConfirm();
+        }
+
+        // Auto Refresh
+        const refreshSelect = document.getElementById('refresh-interval');
+
+        const savedInterval = localStorage.getItem('refreshInterval');
+        if (savedInterval) {
+            refreshSelect.value = savedInterval;
+            startAutoRefresh(parseInt(savedInterval));
+        }
+
+        refreshSelect.addEventListener('change', (e) => {
+            const interval = parseInt(e.target.value);
+            localStorage.setItem('refreshInterval', interval);
+            startAutoRefresh(interval);
+        });
+
+        function startAutoRefresh(interval) {
+            if (refreshIntervalId) clearInterval(refreshIntervalId);
+            if (interval > 0) {
+                refreshIntervalId = setInterval(refreshCurrentView, interval);
+            }
+        }
+
+        function refreshCurrentView() {
+            const activeView = document.querySelector('.view.active').id;
+            if (activeView === 'stats-view') fetchStats();
+            if (activeView === 'keys-view') fetchKeyLogs();
+            if (activeView === 'windows-view') fetchWindowLogs();
+            if (activeView === 'gallery-view') fetchScreenshots();
+        }
+
+        // Modal
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        const closeBtn = document.querySelector('.modal-close');
+
+        window.openModal = (url) => {
+            modalImg.src = url;
+            modal.classList.add('active');
+        };
+
+        closeBtn.onclick = () => modal.classList.remove('active');
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        };
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initial Load
+        fetchStats();
+        fetchKeyLogs();
+        fetchWindowLogs();
+        fetchScreenshots();
+        fetchConfig();
+
+    </script>
+</body>
+
+</html>

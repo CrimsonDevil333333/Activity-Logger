@@ -1,2 +1,12 @@
 /target
-config.json
+/Cargo.lock
+*.log
+
+# Distribution artifacts
+/dist
+*.zip
+*.tar.gz
+
+# Build errors
+build_error.txt
+error.lognfig.json

@@ -3,6 +3,8 @@ name: Rust
 on:
   push:
     branches: ["main"]
+    tags:
+      - "v*"
   pull_request:
     branches: ["main"]
 
@@ -10,7 +12,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-
   build-windows:
     runs-on: windows-latest
     strategy:
@@ -43,10 +44,14 @@ jobs:
 
       - name: Package Windows Artifact
         run: |
-          mkdir -p dist/windows
-          cp target/release/activity_logger.exe dist/windows/
-          cp assets/icon.ico dist/windows/
-        shell: bash
+          mkdir -p dist/windows/Activity-Logger
+          cp target/release/activity_logger.exe dist/windows/Activity-Logger/
+          cp config.json dist/windows/Activity-Logger/
+          cp README.md dist/windows/Activity-Logger/
+          if (Test-Path assets/icon.ico) { cp assets/icon.ico dist/windows/Activity-Logger/ }
+          echo "@echo off" > dist/windows/Activity-Logger/run.bat
+          echo "start activity_logger.exe" >> dist/windows/Activity-Logger/run.bat
+        shell: pwsh
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -87,9 +92,15 @@ jobs:
 
       - name: Package Linux Artifact
         run: |
-          mkdir -p dist/linux
-          cp target/release/activity_logger dist/linux/
-          cp assets/icon.png dist/linux/
+          mkdir -p dist/linux/Activity-Logger
+          cp target/release/activity_logger dist/linux/Activity-Logger/
+          cp config.json dist/linux/Activity-Logger/
+          cp README.md dist/linux/Activity-Logger/
+          if [ -f assets/icon.png ]; then cp assets/icon.png dist/linux/Activity-Logger/; fi
+          echo "#!/bin/bash" > dist/linux/Activity-Logger/run.sh
+          echo "./activity_logger" >> dist/linux/Activity-Logger/run.sh
+          chmod +x dist/linux/Activity-Logger/run.sh
+          chmod +x dist/linux/Activity-Logger/activity_logger
         shell: bash
 
       - name: Upload Linux Artifact
@@ -101,8 +112,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: build-linux
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
-      contents: write  # Required for creating release
+      contents: write
     steps:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
@@ -116,23 +128,20 @@ jobs:
           name: release-artifacts-linux
           path: dist/linux
 
-      - name: Generate release tag
-        id: tag
-        run: echo "release_tag=UserBuild_$(date +'%Y.%m.%d_%H-%M')" >> "$GITHUB_OUTPUT"
-
       - name: Compress Artifacts
         run: |
           cd dist
-          zip -r activity_logger_windows.zip windows
-          zip -r activity_logger_linux.zip linux
+          zip -r Activity-Logger-Windows.zip windows/Activity-Logger
+          tar -czf Activity-Logger-Linux.tar.gz -C linux Activity-Logger
         shell: bash
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.tag.outputs.release_tag }}
           files: |
-            dist/activity_logger_windows.zip
-            dist/activity_logger_linux.zip
+            dist/Activity-Logger-Windows.zip
+            dist/Activity-Logger-Linux.tar.gz
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

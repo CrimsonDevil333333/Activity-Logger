@@ -1,0 +1,23 @@
+{
+  "key_log_file": "key_log.txt",
+  "window_log_file": "active_window_log.txt",
+  "log_dir": "temp",
+  "inactivity_timeout_secs": 5,
+  "screenshot_enabled": true,
+  "screenshot_interval_secs": 30,
+  "screenshot_resolution": [1280, 720],
+  "hotkeys": {
+    "pause_resume": "Ctrl+Shift+P",
+    "screenshot": "Ctrl+Shift+S"
+  },
+  "notification": {
+    "on_start": true,
+    "on_stop": true,
+    "on_error": true
+  },
+  "summary_report": {
+    "enabled": true,
+    "interval_days": 1,
+    "output_file": "activity_summary_report.txt"
+  }
+}

@@ -2,19 +2,20 @@
 
 mod config;
 mod embedded;
-mod platform;
-mod screenshot_mod;
-mod tracker;
-mod tray;
 mod hotkey;
 mod notification;
+mod platform;
 mod report;
+mod screenshot_mod;
+mod server;
+mod tracker;
+mod tray;
 
-use std::path::PathBuf;
-use screenshot_mod::start_screenshot_loop;
 use hotkey::{HotkeyAction, HotkeyHandler};
-use notification::{Notifier, NotificationType};
+use notification::{NotificationType, Notifier};
 use report::SummaryReporter;
+use screenshot_mod::start_screenshot_loop;
+use std::path::PathBuf;
 
 fn main() {
     println!("Starting Activity Logger...");
@@ -45,6 +46,18 @@ fn main() {
     }
 
     use std::sync::Arc;
+
+    let server_config = config.clone();
+
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            if let Err(e) = server::start_server(server_config).await {
+                eprintln!("Server error: {}", e);
+            }
+        });
+    });
+
     let config = Arc::new(config);
 
     // --- Notification System ---
@@ -83,7 +96,10 @@ fn main() {
     let summary_reporter = SummaryReporter::new(&config);
     if config.summary_report_enabled() {
         if let Err(e) = summary_reporter.generate_report() {
-            notifier.notify(NotificationType::Error(format!("Failed to generate summary report: {}", e)));
+            notifier.notify(NotificationType::Error(format!(
+                "Failed to generate summary report: {}",
+                e
+            )));
         }
     }
 
